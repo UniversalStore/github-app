@@ -1,0 +1,21 @@
+{
+  "name": "github-app",
+  "version": "1.0.0",
+  "description": "An app to track specific user stats on GitHub",
+  "main": "index.ts",
+  "scripts": {
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm start",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "install:monorepo": "npm install",
+    "install:frontend": "cd frontend && npm install",
+    "install:backend": "cd backend && npm install",
+    "install:all": "npm run install:monorepo && npm run install:backend && npm run install:frontend",
+    "test": "cd backend && jest"
+  },
+  "author": "Alex Potts",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

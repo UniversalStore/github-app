@@ -9,8 +9,10 @@ let client: GithubGraphqlClient;
 app.get("/code-reviews", async (req, res) => {
    try {
        const login = req.query.login as string;
+       const fromDate = req.query?.fromDate ? new Date(req.query?.fromDate as string) : undefined;
+       const toDate = req.query?.toDate ? new Date(req.query?.toDate as string) : undefined;
        client = GithubGraphqlClient.getInstance();
-       const repoData = await client.getUserCodeReviewData(login);
+       const repoData = await client.getUserCodeReviewData(login, fromDate, toDate);
 
        res.status(200).send(repoData);
    } catch (error: any) {

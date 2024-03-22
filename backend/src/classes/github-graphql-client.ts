@@ -50,8 +50,10 @@ export class GithubGraphqlClient {
      * Gets the entirety of a user's code review history from GitHub
      * N.B. GitHub only seems to make the last 12 months worth of contributions available
      * @param login
+     * @param fromDate
+     * @param toDate
      */
-    public async getUserCodeReviewData(login: string): Promise<PullRequestReviewContributionsNodes[]> {
+    public async getUserCodeReviewData(login: string, fromDate?: Date, toDate?: Date): Promise<PullRequestReviewContributionsNodes[]> {
         const reviews: PullRequestReviewContributionsNodes[] = [];
         let hasNextPage = true;
         let endCursor = '';
@@ -95,6 +97,45 @@ export class GithubGraphqlClient {
             // Get the next page of reviews
             const response = await this.query<UserCodeReviewDataResponse>(query, {login});
             const nodes = response?.user?.contributionsCollection?.pullRequestReviewContributions?.nodes;
+
+            //If the first review is before the fromDate, break the loop
+
+            //first review is the most recent one, so check if it after the toDate
+            //if it is, only add reviews that are before the toDate and after the fromDate and break the loop
+            if (nodes?.[0].pullRequestReview?.createdAt) {
+                const latestReviewDate = new Date(nodes[0].pullRequestReview.createdAt);
+                if (toDate && latestReviewDate > toDate) {
+                    const relevantReviews = nodes.filter((review) => {
+                            const reviewDate = new Date(review.pullRequestReview.createdAt);
+                            return reviewDate <= toDate && (!fromDate || reviewDate >= fromDate);
+                        }
+                    );
+                    reviews.push(...relevantReviews);
+                    //if all reviews were not added, break the loop
+                    if (relevantReviews.length !== nodes.length) break;
+                }
+            }
+
+            //The last review is the oldest from this page, so check if it is before the fromDate
+            // if it is, only add reviews that are before the fromDate and after the toDate and break the loop
+            if (nodes?.[nodes.length - 1].pullRequestReview?.createdAt) {
+                const lastReviewDate = new Date(nodes[nodes.length - 1].pullRequestReview.createdAt);
+                if (fromDate && lastReviewDate < fromDate) {
+                    const relevantReviews = nodes.filter((review) => {
+                            const reviewDate = new Date(review.pullRequestReview.createdAt);
+                            return (!toDate || reviewDate <= toDate) && reviewDate >= fromDate;
+                        }
+                    );
+                    reviews.push(...relevantReviews);
+                    //if all reviews were not added, break the loop
+                    if (relevantReviews.length !== nodes.length) break;
+
+                    // Update the pagination variables and continue
+                    hasNextPage = !!response?.user?.contributionsCollection?.pullRequestReviewContributions?.pageInfo?.hasNextPage;
+                    endCursor = response?.user?.contributionsCollection?.pullRequestReviewContributions?.pageInfo?.endCursor || '';
+                    continue;
+                }
+            }
 
             // Update the pagination variables
             hasNextPage = !!response?.user?.contributionsCollection?.pullRequestReviewContributions?.pageInfo?.hasNextPage;

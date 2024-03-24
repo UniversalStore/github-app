@@ -98,21 +98,17 @@ export class GithubGraphqlClient {
             const response = await this.query<UserCodeReviewDataResponse>(query, {login});
             const nodes = response?.user?.contributionsCollection?.pullRequestReviewContributions?.nodes;
 
-            //If the first review is before the fromDate, break the loop
+            // Update the pagination variables
+            hasNextPage = !!response?.user?.contributionsCollection?.pullRequestReviewContributions?.pageInfo?.hasNextPage;
+            endCursor = response?.user?.contributionsCollection?.pullRequestReviewContributions?.pageInfo?.endCursor || '';
 
             //first review is the most recent one, so check if it after the toDate
             //if it is, only add reviews that are before the toDate and after the fromDate and break the loop
             if (nodes?.[0].pullRequestReview?.createdAt) {
                 const latestReviewDate = new Date(nodes[0].pullRequestReview.createdAt);
                 if (toDate && latestReviewDate > toDate) {
-                    const relevantReviews = nodes.filter((review) => {
-                            const reviewDate = new Date(review.pullRequestReview.createdAt);
-                            return reviewDate <= toDate && (!fromDate || reviewDate >= fromDate);
-                        }
-                    );
-                    reviews.push(...relevantReviews);
-                    //if all reviews were not added, break the loop
-                    if (relevantReviews.length !== nodes.length) break;
+                    if (this.addRelevantReviews(reviews, nodes, fromDate, toDate)) break;
+                    continue;
                 }
             }
 
@@ -121,30 +117,27 @@ export class GithubGraphqlClient {
             if (nodes?.[nodes.length - 1].pullRequestReview?.createdAt) {
                 const lastReviewDate = new Date(nodes[nodes.length - 1].pullRequestReview.createdAt);
                 if (fromDate && lastReviewDate < fromDate) {
-                    const relevantReviews = nodes.filter((review) => {
-                            const reviewDate = new Date(review.pullRequestReview.createdAt);
-                            return (!toDate || reviewDate <= toDate) && reviewDate >= fromDate;
-                        }
-                    );
-                    reviews.push(...relevantReviews);
-                    //if all reviews were not added, break the loop
-                    if (relevantReviews.length !== nodes.length) break;
-
-                    // Update the pagination variables and continue
-                    hasNextPage = !!response?.user?.contributionsCollection?.pullRequestReviewContributions?.pageInfo?.hasNextPage;
-                    endCursor = response?.user?.contributionsCollection?.pullRequestReviewContributions?.pageInfo?.endCursor || '';
+                    if (this.addRelevantReviews(reviews, nodes, fromDate, toDate)) break;
                     continue;
                 }
             }
-
-            // Update the pagination variables
-            hasNextPage = !!response?.user?.contributionsCollection?.pullRequestReviewContributions?.pageInfo?.hasNextPage;
-            endCursor = response?.user?.contributionsCollection?.pullRequestReviewContributions?.pageInfo?.endCursor || '';
 
             // Add the reviews to the list of reviews if they exist
             if (nodes) reviews.push(...nodes);
         }
 
         return reviews;
+    }
+
+    private addRelevantReviews(reviews: PullRequestReviewContributionsNodes[], nodes: PullRequestReviewContributionsNodes[], fromDate?: Date, toDate?: Date): boolean {
+        const relevantReviews = nodes.filter((review) => {
+                const reviewDate = new Date(review.pullRequestReview.createdAt);
+                return (!toDate || reviewDate <= toDate) && (!fromDate || reviewDate >= fromDate);
+            }
+        );
+        reviews.push(...relevantReviews);
+        //if all reviews were not added, break the loop
+        if (relevantReviews.length !== nodes.length) return false;
+        return true;
     }
 }

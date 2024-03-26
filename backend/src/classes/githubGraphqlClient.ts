@@ -1,5 +1,5 @@
 import {cacheExchange, Client, fetchExchange} from "@urql/core";
-import {PullRequestReviewContributionsNodes, UserCodeReviewDataResponse} from "../types/github-graphql";
+import {PullRequestReviewContributionsNodes, UserCodeReviewDataResponse} from "@github-app/shared/types/github-graphql";
 
 /**
  * Singleton class for interacting with the GitHub GraphQL API
@@ -104,7 +104,7 @@ export class GithubGraphqlClient {
 
             //first review is the most recent one, so check if it after the toDate
             //if it is, only add reviews that are before the toDate and after the fromDate and break the loop
-            if (nodes?.[0].pullRequestReview?.createdAt) {
+            if (nodes?.[0]?.pullRequestReview?.createdAt) {
                 const latestReviewDate = new Date(nodes[0].pullRequestReview.createdAt);
                 if (toDate && latestReviewDate > toDate) {
                     if (this.addRelevantReviews(reviews, nodes, fromDate, toDate)) break;
@@ -114,7 +114,7 @@ export class GithubGraphqlClient {
 
             //The last review is the oldest from this page, so check if it is before the fromDate
             // if it is, only add reviews that are before the fromDate and after the toDate and break the loop
-            if (nodes?.[nodes.length - 1].pullRequestReview?.createdAt) {
+            if (nodes?.[nodes.length - 1]?.pullRequestReview?.createdAt) {
                 const lastReviewDate = new Date(nodes[nodes.length - 1].pullRequestReview.createdAt);
                 if (fromDate && lastReviewDate < fromDate) {
                     if (this.addRelevantReviews(reviews, nodes, fromDate, toDate)) break;

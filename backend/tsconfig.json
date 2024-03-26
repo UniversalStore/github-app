@@ -9,7 +9,7 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": "./",
     "paths": {
-      "@shared/*": ["shared/*"],
+      "@github-app/shared/*": ["../shared/*"],
     }
   },
   "include": ["src/**/*"],

@@ -1,6 +1,6 @@
-import {GithubGraphqlClient} from "../classes/github-graphql-client";
+import {GithubGraphqlClient} from "../classes/githubGraphqlClient";
 
-describe('All github-graphql-client.test.ts tests', () => {
+describe('All githubGraphqlClient.test.ts tests', () => {
     beforeAll(() => {
         process.env.GITHUB_ACCESS_TOKEN = "ghp_testtoken1234";
     });
